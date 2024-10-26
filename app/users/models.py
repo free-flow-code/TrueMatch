@@ -29,10 +29,10 @@ class Clients(Base):
     id = Column(Integer, primary_key=True)
     hash_password = Column(String, nullable=False)
     email = Column(String, nullable=False, unique=True)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    gender = Column(Enum(ClientGender), nullable=False)
-    registration_date = Column(Date, nullable=False)
+    first_name = Column(String, nullable=False, index=True)
+    last_name = Column(String, nullable=False, index=True)
+    gender = Column(Enum(ClientGender), nullable=False, index=True)
+    registration_date = Column(Date, nullable=False, index=True)
     avatar = Column(String)
 
     def __str__(self):

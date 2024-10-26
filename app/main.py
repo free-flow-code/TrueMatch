@@ -10,6 +10,7 @@ from redis import asyncio as aioredis
 from app.config import settings
 from app.users.router import router as router_clients
 from app.images.router import router as router_images
+from app.search.router import router as router_search
 
 logging.basicConfig(
         level=logging.DEBUG,
@@ -39,6 +40,7 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory="app/static"), "static")
 app.include_router(router_clients)
 app.include_router(router_images)
+app.include_router(router_search)
 
 origins = settings.ORIGINS
 
