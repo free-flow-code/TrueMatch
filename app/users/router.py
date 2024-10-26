@@ -1,14 +1,19 @@
 import logging
 from datetime import date
 from pydantic import EmailStr
-from fastapi import APIRouter, Response, UploadFile, Form
+from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Response, UploadFile, Form, Depends
 
-from app.users.schemas import SClientAuth, SClientRegistration
+from app.config import settings
+from app.users.schemas import SClientAuth, SClientRegistration, SClient
 from app.users.dao import ClientsDAO
 from app.users.auth import get_password_hash, authenticate_user, create_access_token
+from app.users.dependencies import get_current_client
 from app.images.router import add_avatar
 from app.users.models import ClientGender
-from app.exeptions import UserAlreadyExistException, IncorrectEmailOrPasswordException, AvatarDownloadException
+from app.tasks.tasks import send_match_email_notification
+from app.exeptions import UserAlreadyExistException, IncorrectEmailOrPasswordException, AvatarDownloadException, \
+    LikeLimitException, FiledToLikeException
 
 router = APIRouter(
     prefix="/clients",
@@ -62,10 +67,34 @@ async def login_client(response: Response, user_data: SClientAuth):
         raise IncorrectEmailOrPasswordException
 
     access_token = create_access_token({"sub": str(user.id)})
-    response.set_cookie("booking_access_token", access_token, httponly=True)
+    response.set_cookie("truematch_access_token", access_token, httponly=True)
     return access_token
 
 
 @router.post("/logout")
 async def logout_client(response: Response):
-    response.delete_cookie("booking_access_token")
+    response.delete_cookie("truematch_access_token")
+
+
+@router.post("/{id}/match")
+async def match_clients(liked_client_id: int, current_client=Depends(get_current_client)):
+    client_daily_likes = await ClientsDAO.count_likes_today(current_client.id)
+    if client_daily_likes >= settings.DAILY_LIKES_LIMIT:
+        raise LikeLimitException
+
+    try:
+        await ClientsDAO.add_like(current_client.id, liked_client_id)
+    except IntegrityError:
+        raise FiledToLikeException
+
+    is_mutual_like = await ClientsDAO.check_mutual_like(current_client.id, liked_client_id)
+
+    if is_mutual_like:
+        liked_client = await ClientsDAO.find_by_id(liked_client_id)
+        current_client_data = SClient.from_orm(current_client)
+        liked_client_data = SClient.from_orm(liked_client)
+
+        send_match_email_notification.delay(current_client_data.dict(), liked_client_data.dict())
+
+        return {"message": f"Взаимная симпатия с {liked_client.email}!"}
+    return {"message": "Лайк успешно отправлен!"}

@@ -18,3 +18,11 @@ class SClientAuth(BaseModel):
 
     email: EmailStr
     password: str
+
+
+class SClient(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    email: EmailStr
+    first_name: str
+    last_name: str

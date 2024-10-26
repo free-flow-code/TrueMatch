@@ -9,6 +9,7 @@ class Settings(BaseSettings):
         env_ignore_empty=True,
         extra="ignore"
     )
+    DAILY_LIKES_LIMIT: int = 10
     AVATARS_DIR: str = "app/static/avatars/"
     WATERMARK_PATH: str = "app/static/watermark.png"
 
@@ -36,6 +37,11 @@ class Settings(BaseSettings):
 
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
+
+    SMTP_HOST: str
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    SMTP_PORT: int
 
 
 settings = Settings()

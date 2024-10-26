@@ -1,5 +1,6 @@
 import enum
-from sqlalchemy import Column, Integer, String, Date, Enum
+from sqlalchemy.orm import relationship
+from sqlalchemy import Column, Integer, String, Date, Enum, ForeignKey
 
 from app.database import Base
 
@@ -7,6 +8,19 @@ from app.database import Base
 class ClientGender(enum.Enum):
     male = "male"
     female = "female"
+
+
+class Likes(Base):
+    __tablename__ = "likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rater_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    liked_id = Column(Integer, ForeignKey("clients.id"), nullable=False)
+    date = Column(Date, nullable=False)
+
+    # Связи для получения информации о лайках
+    rater = relationship("Clients", backref="likes_given", foreign_keys=[rater_id])
+    liked = relationship("Clients", backref="likes_received", foreign_keys=[liked_id])
 
 
 class Clients(Base):
