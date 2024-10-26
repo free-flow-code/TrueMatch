@@ -26,3 +26,4 @@ async def add_avatar(file: UploadFile):
                 break
             await file_object.write(content)
     add_watermark.delay(image_path, settings.WATERMARK_PATH)
+    return filename
