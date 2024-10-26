@@ -5,6 +5,8 @@ from app.dao.base import BaseDAO
 from app.users.models import Clients, Likes
 from app.database import async_session_maker
 from app.search.schemas import FilterParams
+from app.search.utils import filter_by_distance
+from app.exeptions import IncorrectCoordinatesException
 
 
 class ClientsDAO(BaseDAO):
@@ -39,9 +41,17 @@ class ClientsDAO(BaseDAO):
             return result.scalar() is not None
 
     @classmethod
-    async def list_clients(cls, filters: FilterParams, skip: int = 0, limit: int = 10):
+    async def list_clients(
+            cls,
+            filters: FilterParams,
+            current_client_id: int,
+            current_client_lat: float,
+            current_client_lon: float,
+            skip: int = 0,
+            limit: int = 10
+    ):
         async with async_session_maker() as session:
-            query = select(Clients)
+            query = select(Clients).filter(Clients.id != current_client_id)
 
             if filters.gender:
                 query = query.filter(Clients.gender == filters.gender)
@@ -59,5 +69,16 @@ class ClientsDAO(BaseDAO):
 
             result = await session.execute(query)
             clients = result.scalars().all()
+
+            if filters.max_distance:
+                if not current_client_lat or not current_client_lon:
+                    raise IncorrectCoordinatesException
+                clients = await filter_by_distance(
+                    clients,
+                    current_client_id,
+                    current_client_lat,
+                    current_client_lon,
+                    filters.max_distance
+                )
 
         return clients

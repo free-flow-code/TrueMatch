@@ -1,6 +1,6 @@
 import enum
 from sqlalchemy.orm import relationship
-from sqlalchemy import Column, Integer, String, Date, Enum, ForeignKey
+from sqlalchemy import Column, Integer, String, Date, Enum, ForeignKey, Float
 
 from app.database import Base
 
@@ -34,6 +34,8 @@ class Clients(Base):
     gender = Column(Enum(ClientGender), nullable=False, index=True)
     registration_date = Column(Date, nullable=False, index=True)
     avatar = Column(String)
+    lat = Column(Float, nullable=True, comment="Широта")
+    lon = Column(Float, nullable=True, comment="Долгота")
 
     def __str__(self):
         return f"Пользователь {self.first_name} {self.last_name}"
