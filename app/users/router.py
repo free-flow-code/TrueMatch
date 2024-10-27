@@ -1,18 +1,18 @@
-import logging
 from datetime import date
 from pydantic import EmailStr
+from typing import Optional
 from sqlalchemy.exc import IntegrityError
-from fastapi import APIRouter, Response, UploadFile, Form, Depends
+from fastapi import APIRouter, Response, UploadFile, Form, Depends, File
 
 from app.config import settings
 from app.users.schemas import SClientAuth, SClientRegistration, SClient
 from app.users.dao import ClientsDAO
+from app.images.router import add_avatar
 from app.users.auth import get_password_hash, authenticate_user, create_access_token
 from app.users.dependencies import get_current_client
-from app.images.router import add_avatar
 from app.users.models import ClientGender
 from app.tasks.tasks import send_match_email_notification
-from app.exeptions import UserAlreadyExistException, IncorrectEmailOrPasswordException, AvatarDownloadException, \
+from app.exeptions import UserAlreadyExistException, IncorrectEmailOrPasswordException, \
     LikeLimitException, FiledToLikeException
 
 router = APIRouter(
@@ -28,14 +28,18 @@ async def register_client(
     first_name: str = Form(...),
     last_name: str = Form(...),
     gender: ClientGender = Form(...),
-    avatar: UploadFile = None
+    lat: Optional[float] = Form(None),
+    lon: Optional[float] = Form(None),
+    avatar: UploadFile = File(...)
 ):
     client_data = SClientRegistration(
         email=email,
         password=password,
         first_name=first_name,
         last_name=last_name,
-        gender=gender
+        gender=gender,
+        lat=lat,
+        lon=lon
     )
 
     existing_client = await ClientsDAO.find_one_or_none(email=client_data.email)
@@ -48,13 +52,8 @@ async def register_client(
     new_client_data["registration_date"] = date.today()
     new_client_data.pop("password")
 
-    # Загружаем аватар
-    try:
-        avatar_filename = await add_avatar(avatar)
-        new_client_data["avatar"] = avatar_filename
-    except Exception as err:
-        logging.info(f"{err}")
-        raise AvatarDownloadException
+    if avatar:
+        new_client_data["avatar"] = await add_avatar(avatar)
 
     await ClientsDAO.add(**new_client_data)
     return {"message": "Клиент успешно зарегистрирован"}

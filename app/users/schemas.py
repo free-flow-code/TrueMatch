@@ -11,6 +11,8 @@ class SClientRegistration(BaseModel):
     first_name: str
     last_name: str
     gender: ClientGender
+    lat: float
+    lon: float
 
 
 class SClientAuth(BaseModel):
