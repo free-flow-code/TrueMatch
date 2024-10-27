@@ -1,0 +1,55 @@
+version: '3.7'
+services:
+  db:
+    image: postgres:16
+    container_name: truematch_db
+    env_file:
+      - .env-prod-example
+    ports:
+      - 5432:5432
+      
+  redis:
+    image: redis:7
+    container_name: truematch_redis
+    
+  truematch:
+    image: truematch_image
+    container_name: truematch_app
+    build:
+      context: .
+    env_file:
+      - .env-prod-example
+    command: ["/opt/truematch/docker/app.sh"]
+    volumes:
+      - ./app/static/avatars:/opt/truematch/app/static/avatars
+    depends_on:
+      - db
+      - redis
+    ports:
+      - 8000:8000
+      
+  celery:
+    image: truematch_celery
+    container_name: truematch_celery
+    build:
+      context: .
+    command: ["/opt/truematch/docker/celery.sh", "celery"]
+    env_file:
+      - .env-prod-example
+    volumes:
+      - ./app/static/avatars:/opt/truematch/app/static/avatars
+    depends_on:
+      - redis
+      
+  flower:
+    image: truematch_flower
+    container_name: truematch_flower
+    build:
+      context: .
+    command: ["/opt/truematch/docker/celery.sh", "flower"]
+    env_file:
+      - .env-prod-example
+    depends_on:
+      - redis
+    ports:
+      - 5555:5555

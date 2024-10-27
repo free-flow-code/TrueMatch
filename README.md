@@ -1,6 +1,6 @@
 # TrueMatch
 
-Сервис знакомств на FastApi. Состоит из 3х эндпоинтов:
+Сервис знакомств на FastApi. Состоит из следующих эндпоинтов:
 
 - Эндпоинт для регистрации нового участника:
   - URL: /api/clients/create
@@ -26,36 +26,41 @@
   Доступна фильтрация по полу, имени, фамилии, дате регистрации и расстоянию относительно авторизованного пользователя.
   Значения расстояний между пользователями кэшируются, для улучшения производительности.
 
-СТЕК:
+## Стек
 - FastApi
 - PostgreSQL
 - Redis
 - Celery
+- Docker
 
 ## Подготовка к установке
 
-Python 3.9 должен быть установлен.Создайте виртуальное окружение и установите зависимости командой:
-
-```pip install -r requirements.txt```
-
-Создайте базы данных PostgreSQL 16 и Redis. В корне проекта создайте
-'.env' файл с переменными окружения:
+В корне проекта создайте '.env' файл с переменными окружения.
+Пример файла `.env-prod-example':
 
 ```
 DAILY_LIKES_LIMIT=10
 AVATARS_DIR="app/static/avatars/"
 WATERMARK_PATH="app/static/watermark.png"
+
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASS=root
 DB_NAME=postgres
+
+POSTGRES_DB=true_match_db
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+
 ENCRYPTION_KEY=s3XUjyntOk0o=
 JWT_SECRET_KEY=asdlajsdasASDASD=
 ALGORITHM=HS256
 ORIGINS=["http://127.0.0.1:8000", "http://127.0.0.1:3000"]
+
 REDIS_HOST=localhost
 REDIS_PORT=6379
+
 SMTP_HOST=smtp.mail.com
 SMTP_USER=mymail@mail.com
 SMTP_PASSWORD=password
@@ -83,28 +88,24 @@ SMTP_PORT=465
 - `SMTP_PASSWORD` пароль, для подключения к почтовому серверу, нет значения по умолчанию
 - `SMTP_PORT` порт почтового сервера, нет значения по умолчанию
 
-Примените миграции командой:
-```sh
-$ alembic upgrade head
-```
+Замените в файле `docker-compose.yml` название `.env` файла на свое.
 
-## Redis
+## Запуск приложения
 
-Включите аутентификацию на серверах Redis, чтобы требовать аутентификацию перед выполнением любых операций.
-Используйте сильные пароли или механизмы аутентификации, предоставляемые Redis.
-
-Включение аутентификации в Redis:
+Скачайте код:
 
 ```
-#В файле redis.conf установите пароль
-requirepass your_password
+git clone https://github.com/free-flow-code/TrueMatch.git
 ```
-Настройка сетевого доступа: Ограничьте доступ к серверам Redis только для доверенных IP-адресов или подсетей.
-Это можно сделать через настройки брандмауэра или конфигурации самого кэш-сервера.
 
-Настройка сетевого доступа в Redis:
+Установите Docker и Docker-compose. [Ссылка на инструкцию](https://www.howtogeek.com/devops/how-to-install-docker-and-docker-compose-on-linux/).
+
+Перейдите в директорию проекта запустите docker-compose:
 
 ```
-#В файле redis.conf установите разрешенные IP-адреса
-bind 127.0.0.1
+docker compose up --build
 ```
+
+Сайт будет доступен по адресу [http://127.0.0.1:8000/](http://127.0.0.1:8000/).
+
+Flower доступен по адресу [http://127.0.0.1:5555/](http://127.0.0.1:5555).
